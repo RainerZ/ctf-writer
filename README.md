@@ -2,9 +2,7 @@
 
 Tiny pure-Rust library for writing a minimal CTF 1.8 trace directory.
 
-This is intended to be used from a logger project that already knows about task
-switches and timestamps. It intentionally avoids Babeltrace, `babeltrace2-sys`,
-C build tools, and third-party Rust crates.
+This is intended to be used from a logger project that already knows about task switches and timestamps. It intentionally avoids Babeltrace, `babeltrace2-sys`, C build tools, and third-party Rust crates.
 
 It writes:
 
@@ -14,9 +12,7 @@ trace-dir/
 └── stream
 ```
 
-The only event type currently emitted is an LTTng-shaped `sched_switch`. Trace
-Compass successfully imported and decoded this event shape after we added CTF
-alignment padding.
+The only event type currently emitted is an LTTng-shaped `sched_switch`. Trace Compass successfully imported and decoded this event shape after we added CTF alignment padding.
 
 ## Use As A Path Dependency
 
@@ -53,13 +49,12 @@ cargo run
 This creates:
 
 ```text
-demo-trace-aligned/
+demo-trace/
 ├── metadata
 └── stream
 ```
 
-Import `demo-trace-aligned/` in Trace Compass as a CTF trace. The Events view
-should show rows like:
+Import `demo-trace/` in Trace Compass as a CTF trace. The Events view should show rows like:
 
 ```text
 sched_switch prev_comm="IDLE", prev_tid=1, next_comm="sensor", next_tid=2
@@ -68,19 +63,21 @@ sched_switch prev_comm="IDLE", prev_tid=1, next_comm="sensor", next_tid=2
 If Babeltrace 2 is installed, you can also inspect it with:
 
 ```bash
-babeltrace2 demo-trace-aligned
+babeltrace2 demo-trace
 ```
 
 ## Important Implementation Context
 
 CTF binary fields are alignment-sensitive. This project tracks the byte position
-in the stream and inserts padding before 64-bit fields. Without this, Trace
-Compass accepts the trace but decodes garbage values.
+in the stream and inserts padding before event headers and 64-bit fields.
+Without this, Trace Compass can accept the trace but decode garbage values or
+stop after a variable-length string event.
 
 Current binary event layout:
 
 ```text
 event header:
+  padding to 8-byte boundary
   uint32 id
   padding to 8-byte boundary
   uint64 timestamp_ns
